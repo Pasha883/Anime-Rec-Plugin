@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "vZlet project demo 1",
+  "version": "0.3.0",
+  "description": "Вставляет нативную секцию рекомендаций на страницах тайтлов AnimeLIB и подгружает рекомендации с animerecbert.online.",
+  "permissions": [],
+  "host_permissions": [
+    "https://www.animerecbert.online/*"
+  ],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.anilib.me/*",
+        "*://anilib.me/*",
+        "*://*.animelib.me/*",
+        "*://animelib.me/*",
+        "*://*.animelib.org/*",
+        "*://animelib.org/*",
+        "*://v3.animelib.org/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ]
+}
