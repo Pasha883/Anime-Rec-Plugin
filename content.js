@@ -212,10 +212,17 @@
         console.log("Error placeholder");
     }
 
-    async function perseRecomendations(data){
+    async function parseRecomendations(data){
         const {message, recommendations} = data;
 
+        const length = recommendations.length;
+
         console.log("Message:", message);
+
+        for (let i = 0; i < length; i++){
+            const {id, name, genres, score, image_url, mal_url} = recommendations[i];
+            console.log(name);
+        }
     }
 
     // 2) Рекомендации — тоже async
@@ -264,7 +271,8 @@
 
         const added = await addFavoritesRequest(data);
         if (added) {
-            await getRecomendations(); // ← выполнится строго после успешного addFavoritesRequest
+            const data = await getRecomendations(); // ← выполнится строго после успешного addFavoritesRequest
+            return data;
         } else {
             console.warn("Skip recommendations: addFavoritesRequest failed");
             showError();
@@ -469,8 +477,9 @@
         const result = await getEnglishTitle(romajiName);
         const english = result.english ?? result.romaji ?? null;
         console.log(english);
-        await getSearchQueue(english);
+        const data = await getSearchQueue(english);
         await clearFavoriteRequest();
+        await parseRecomendations(data);
     })().catch(console.warn);
 
     let anchorAfter = findSectionBodyByTitle("Похожее")
