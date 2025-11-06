@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "vZlet project demo 1",
-  "version": "0.3.0",
+  "name": "Anime recomendation system plugin",
+  "version": "0.1.9",
   "description": "Вставляет нативную секцию рекомендаций на страницах тайтлов AnimeLIB и подгружает рекомендации с animerecbert.online.",
   "permissions": [],
   "host_permissions": [

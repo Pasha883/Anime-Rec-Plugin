@@ -172,64 +172,121 @@
         });
 }
 
-   function addFavoritesRequest(data){
-        let amount = data[0].length;
+   // универсальная обёртка уже есть:
+    // function fetchViaBg({ url, method="GET", headers={}, body=null }) { ... }
 
-        console.log(amount);        
+    // 1) Добавление в избранное — делаем async и возвращаем true/false
+    async function addFavoritesRequest(data) {
+        // data: [[id, title], ...]; берём первый элемент
+        if (!Array.isArray(data) || !Array.isArray(data[0])) return false;
 
-        // Пример POST c JSON-пейлоадом
-        (async () => {
-            const url = "https://www.animerecbert.online/api/add_favorite"
+        const payload = {
+            anime_id: data[0][0],
+            anime_name: data[0][1],
+        };
 
-            const payload = {
-                anime_id: data[0][0],
-                anime_name: data[0][1]
-            };
+        const url = "https://www.animerecbert.online/api/add_favorite";
 
+        try {
             const resp = await fetchViaBg({
                 url: url,
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Accept": "application/json" },
                 body: JSON.stringify(payload),
             });
+
             if (!resp?.ok) {
-                console.warn("BG POST failed:", resp);
-            } else {
-                console.log("BG POST ok:", resp.json ?? resp.text);
+                console.warn("addFavoritesRequest failed:", resp);
+                return false;
             }
-        })();
+
+            console.log("addFavoritesRequest OK:", resp.json ?? resp.text);
+            return true;
+        } catch (e) {
+            console.warn("addFavoritesRequest error:", e);
+            return false;
+        }
     }
 
-  function getSearchQueue(animeName){
-    let originalString = "https://www.animerecbert.online/api/search_animes?q=" + animeName;
-    let encodedString = originalString.replace(/ /g, "%20");
-    console.log(encodedString);
-
-    // (async () => {
-    //     const url = encodedString;
-    //     const resp = await fetchViaBg(url);
-    //     if (!resp?.ok) {
-    //         console.warn("BG fetch failed:", resp?.error);
-    //         return;
-    //     }
-    //     const data = resp.json ?? resp.text;
-    //     console.log("API data:", data);
-    //     addFavoritesRequest(data);
-    //     })();
-
-    // Пример GET
-        (async () => {
-            const url = encodedString;
-            const resp = await fetchViaBg({ url: url});
-            if (!resp?.ok) {
-                    console.warn("BG fetch failed:", resp?.error);
-                    return;
-                }
-                const data = resp.json ?? resp.text;
-                console.log("API data:", data);
-                addFavoritesRequest(data);
-        })();
+    function showError(){
+        console.log("Error placeholder");
     }
+
+    async function perseRecomendations(data){
+        const {message, recommendations} = data;
+
+        console.log("Message:", message);
+    }
+
+    // 2) Рекомендации — тоже async
+    async function getRecomendations() {
+        console.log("Getting recommendations...");
+
+        const payload = {
+            filters: {
+            show_sequels: false,
+            show_movies: true,
+            show_tv: true,
+            show_ova: false,
+            },
+            blacklisted_animes: [],
+        };
+
+        const resp = await fetchViaBg({
+            url: "https://www.animerecbert.online/api/get_recommendations",
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify(payload),
+        });
+
+        if (!resp?.ok) {
+            console.warn("getRecomendations failed:", resp);
+            return null;
+        }
+
+        const data = resp.json ?? resp.text;
+        console.log("Recommendations:", data);
+        return data;
+    }
+
+    // 3) Поиск → добавление → (только при успехе) рекомендации
+    async function getSearchQueue(animeName) {
+        const url = "https://www.animerecbert.online/api/search_animes?q=" + encodeURIComponent(animeName);
+
+        const resp = await fetchViaBg({ url });
+        if (!resp?.ok) {
+            console.warn("search failed:", resp?.error || resp);
+            return;
+        }
+
+        const data = resp.json ?? resp.text;
+        console.log("Search data:", data);
+
+        const added = await addFavoritesRequest(data);
+        if (added) {
+            await getRecomendations(); // ← выполнится строго после успешного addFavoritesRequest
+        } else {
+            console.warn("Skip recommendations: addFavoritesRequest failed");
+            showError();
+        }
+    }
+
+    async function clearFavoriteRequest(){
+        const url = "https://www.animerecbert.online/api/clear_favorites";
+
+        const resp = await fetchViaBg({ 
+            url: url,
+            method: "POST" 
+        });
+        if (!resp?.ok){
+            console.warn("clearFavoriteRequest failed:", resp?.error || resp);
+            return false;
+        }
+
+        console.log("clearFavoriteRequest success");
+        return true;
+    }
+
 
     
 
@@ -412,8 +469,9 @@
         const result = await getEnglishTitle(romajiName);
         const english = result.english ?? result.romaji ?? null;
         console.log(english);
-        getSearchQueue(english);
-        })().catch(console.warn);
+        await getSearchQueue(english);
+        await clearFavoriteRequest();
+    })().catch(console.warn);
 
     let anchorAfter = findSectionBodyByTitle("Похожее")
                    || findSectionBodyByTitle("Связанное")
