@@ -166,18 +166,19 @@
     }    
     }
 
-    function fetchViaBg(url) {
+    function fetchViaBg({ url, method = "GET", headers = {}, body = null }) {
         return new Promise((resolve) => {
-            chrome.runtime.sendMessage({ type: "FETCH_JSON", url }, (resp) => resolve(resp));
+            chrome.runtime.sendMessage({ type: "FETCH_JSON", url, method, headers, body }, (resp) => resolve(resp));
         });
-    }
+}
 
    function addFavoritesRequest(data){
         let amount = data[0].length;
 
-        console.log(amount);
+        console.log(amount);        
 
-        (async() => {
+        // Пример POST c JSON-пейлоадом
+        (async () => {
             const url = "https://www.animerecbert.online/api/add_favorite"
 
             const payload = {
@@ -185,23 +186,17 @@
                 anime_name: data[0][1]
             };
 
-            try{
-                const response = await fetch(url,{
-                    method: "POST",
-                    headers:{
-                        "Content-Type": "application/json", // обязательно!
-                        "Accept": "application/json"
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if(!response.ok) throw new Error("HTTP ${response.status}");
-                const data = await response.json();
-                console.log("Ответ сервера:", data);
-            } catch (err) {
-                console.error("Ошибка при запросе:", err);
+            const resp = await fetchViaBg({
+                url: url,
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!resp?.ok) {
+                console.warn("BG POST failed:", resp);
+            } else {
+                console.log("BG POST ok:", resp.json ?? resp.text);
             }
-
         })();
     }
 
@@ -210,18 +205,33 @@
     let encodedString = originalString.replace(/ /g, "%20");
     console.log(encodedString);
 
-    (async () => {
-        const url = encodedString;
-        const resp = await fetchViaBg(url);
-        if (!resp?.ok) {
-            console.warn("BG fetch failed:", resp?.error);
-            return;
-        }
-        const data = resp.json ?? resp.text;
-        console.log("API data:", data);
-        addFavoritesRequest(data);
+    // (async () => {
+    //     const url = encodedString;
+    //     const resp = await fetchViaBg(url);
+    //     if (!resp?.ok) {
+    //         console.warn("BG fetch failed:", resp?.error);
+    //         return;
+    //     }
+    //     const data = resp.json ?? resp.text;
+    //     console.log("API data:", data);
+    //     addFavoritesRequest(data);
+    //     })();
+
+    // Пример GET
+        (async () => {
+            const url = encodedString;
+            const resp = await fetchViaBg({ url: url});
+            if (!resp?.ok) {
+                    console.warn("BG fetch failed:", resp?.error);
+                    return;
+                }
+                const data = resp.json ?? resp.text;
+                console.log("API data:", data);
+                addFavoritesRequest(data);
         })();
     }
+
+    
 
     
 
