@@ -313,10 +313,49 @@
             return;
         }
 
-        const data = resp.json ?? resp.text;
-        console.log("Search data:", data);
+        const data_ = resp.json ?? resp.text;
+        console.log("Search data:", data_);
 
-        return data;
+        let { data, links, meta } = data_; // Use 'let' here so we can reassign 'datas' later
+        console.log("Build anime card");
+        console.log(data);
+
+        if (data.length < 1){
+            console.log("Аниме не найдено на AnimeLib");
+            return -1;
+        }
+
+        // --- FIX APPLIED HERE ---
+        // Use filter to create a NEW array that only contains matching items
+        data = data.filter(item => {
+            // Destructure 'eng_name' from the current item in the array
+            const { eng_name } = item;
+            // Keep the item only if the English name matches romajiName
+            return romajiName === eng_name; 
+        });
+        // --- END FIX ---
+
+
+        // If we filtered all items out, handle that case
+        if (data.length < 1) {
+            console.log("No matching anime found after filtering by romajiName.");
+            return -1;
+        }
+
+
+        // Reconstruct the data object with the filtered 'datas' array
+        // We can just use the original 'data' object reference here if preferred, 
+        // or return the new structure:
+        // const resultData = {datas, links, meta};
+
+        // The rest of your code assumes you found at least one match:
+        const {cover} = data[0]; // Access the cover of the *first* matching result
+        const {default_img, filename, md, thumbnail} = cover;
+        console.log(default_img, filename, cover, md);
+
+
+        // Return the updated data structure
+        return {data, links, meta};
     }
 
 
@@ -411,7 +450,7 @@
         //console.log(ageRestriction, contentMarking, cover, eng_name, id, model, name, rating, releaseDate, releaseDateString, rus_name, shiki_rate, site, slug, slug_url, status, type);
         
 
-        if (data.length < 1){
+        if (!data || !Array.isArray(data)){
             console.log("Аниме не найдено на AnimeLib");
             return -1;
         }
@@ -424,13 +463,13 @@
                     <a href="javascript:void(0)" class="card-inline _elevated-2 _rounded-lg" data-media-info-tooltip="enabled" data-media-id="${id}">
                 <div class="cover _shadow card-inline__cover _size-default">
                     <div class="cover__wrap">
-                    <img src="${md}" alt="${name}" class="cover__img" loading="lazy" onload="this.classList.add('_loaded')">
+                    <img src="${md}" alt="${rus_name}" class="cover__img" loading="lazy" onload="this.classList.add('_loaded')">
                     </div>
                 </div>
                 <div class="card-inline__body _content-between">
                     <div>
                     <div class="card-inline__heading">Тест</div>
-                    <div class="card-inline__name">${name}</div>
+                    <div class="card-inline__name">${rus_name}</div>
                     </div>
                     <div class="card-inline__footer">Футер</div>
                 </div>
