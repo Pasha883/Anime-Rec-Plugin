@@ -60,7 +60,18 @@
   const findScheduleContainer = () => document.querySelector(".zw_g");
   const findCharactersSectionBody = () => findSectionBodyByTitle("Персонажи");
   const firstSectionBody = () => document.querySelector(".section-body");
-  const isAnimeDetailUrl = () => /\/anime\//.test(location.pathname);
+  const isAnimeDetailUrl = () => {
+    // Проверяем путь /anime/
+    if (!/\/anime\//.test(location.pathname)) return false;
+    
+    // Получаем параметр section из URL
+    const section = new URLSearchParams(location.search).get('section');
+    
+    // Показываем если:
+    // 1. section отсутствует (главная страница аниме)
+    // 2. или section=info
+    return !section || section === 'info';
+  };
   
 
   // ========================= FEEDBACK (STUB) ===============================
@@ -210,8 +221,28 @@
         }
     }
 
-    function showError(){
-        console.log("Error placeholder");
+    function showError(message = "Не удалось составить рекомендации"){
+        // Replace loading placeholder with a friendly error message
+        const section = document.getElementById("plugin-recs");
+        if (!section) {
+            console.warn("showError: no plugin-recs section to update", message);
+            return;
+        }
+
+        section.innerHTML = `
+          <div class="media-section-head">
+            <div class="section-title size-sm btns">
+              <div class="section-title__link">
+                <span>Рекомендации недоступны</span>
+              </div>
+            </div>
+          </div>
+          <div class="ej_g ej_ek">
+            <div class="ej_az" id="plugin-scroll-content" style="min-height:120px; display:flex;align-items:center;justify-content:center;">
+              <div style="text-align:center;color:var(--color-text-secondary);">${message}</div>
+            </div>
+          </div>
+        `;
     }
 
     async function parseRecomendations(data){
@@ -269,8 +300,9 @@
 
         const resp = await fetchViaBg({ url });
         if (!resp?.ok) {
-            console.warn("search failed:", resp?.error || resp);
-            return;
+      console.warn("search failed:", resp?.error || resp);
+      // let caller handle UI; return null to indicate failure
+      return null;
         }
 
         const data = resp.json ?? resp.text;
@@ -281,8 +313,10 @@
             const data = await getRecomendations(); // ← выполнится строго после успешного addFavoritesRequest
             return data;
         } else {
-            console.warn("Skip recommendations: addFavoritesRequest failed");
-            showError();
+      console.warn("Skip recommendations: addFavoritesRequest failed (probably not found in DB)");
+      // Inform user that AI couldn't produce recommendations for this title
+      showError("AI не смогла составить рекомендаций по данному аниме. Она ещё учится, простите :(");
+      return null;
         }
     }
 
@@ -752,14 +786,27 @@
       // Now fetch recommendations in background
       const el = document.querySelector('h2.qx_q0, h2[class^="qx_"]');
       const romajiName = el?.textContent.trim();
-      if (!romajiName) return false;
+      if (!romajiName) {
+        showError("Не удалось определить название для поиска рекомендаций");
+        return true; // loading replaced by error -> treat as handled
+      }
 
       const result = await getEnglishTitle(romajiName);
-      const english = result.english ?? result.romaji ?? null;
+      const english = result?.english ?? result?.romaji ?? null;
       console.log(english);
       const data = await getSearchQueue(english);
+      if (!data) {
+        // If searchQueue returned null we assume AI couldn't make recommendations or server error.
+        showError("AI не смогла составить рекомендаций по данному аниме. Она ещё учится, простите :(");
+        return true;
+      }
+
       await clearFavoriteRequest();
       const recomendations = await parseRecomendations(data);
+      if (!recomendations || recomendations.length === 0) {
+        showError("AI не смогла составить рекомендаций по данному аниме. Она ещё учится, простите :(");
+        return true;
+      }
 
       const cards = [];
 
@@ -768,6 +815,11 @@
         const anime = await makeAnimeLibSearch(recomendations[i]);
         const card = buildAnimeCard(anime);
         if (card && card !== -1) cards.push(card);
+      }
+
+      if (cards.length === 0) {
+        showError("По найденным результатам не удалось собрать карточки рекомендаций");
+        return true;
       }
 
       const cardsHtml = cards.join("");
