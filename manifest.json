@@ -7,6 +7,18 @@
   "host_permissions": [
     "https://www.animerecbert.online/*"
   ],
+  "web_accessible_resources": [{
+    "resources": ["ai.gif"],
+    "matches": [
+      "*://*.anilib.me/*",
+      "*://anilib.me/*",
+      "*://*.animelib.me/*",
+      "*://animelib.me/*",
+      "*://*.animelib.org/*",
+      "*://animelib.org/*",
+      "*://v3.animelib.org/*"
+    ]
+  }],
   "background": { "service_worker": "background.js" },
   "content_scripts": [
     {

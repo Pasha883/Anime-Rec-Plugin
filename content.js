@@ -94,6 +94,15 @@
   const ratingState = new Map(PLACEHOLDERS.map(x => [x.id, { up: x.up, down: x.down }]));
   const score = (r) => r.up - r.down;
 
+  // Settings for loading GIFs: size in px, gap between images (px), overlap in px, vertical padding for section
+  // To adjust overlap of gifs, change `overlap` to a positive number (pixels). If overlap > 0, gifs will shift left and overlap.
+  const LOADING_GIF_SETTINGS = {
+    size: 100,       // width and height of each gif in px
+    gap: 12,         // visible gap when no overlap
+    overlap: 0,     // how many pixels subsequent gifs overlap the previous one (0 = no overlap)
+    vPadding: 6      // vertical padding (top/bottom) of the section in px
+  };
+
   // ========================= INLINE SVG FROM SITE ==========================
   const PLUS_SVG = `
     <svg class="svg-inline--fa fa-plus" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="plus" role="img"
@@ -404,40 +413,52 @@
     section.className = "section-body p2_p3";
     section.id = "plugin-recs";
     
+    // Get extension URL for ai.gif
+    const aiGifUrl = chrome.runtime.getURL('ai.gif');
+    // Use LOADING_GIF_SETTINGS to build layout with optional overlap
+    const size = Math.max(40, LOADING_GIF_SETTINGS.size);
+    const gap = LOADING_GIF_SETTINGS.gap;
+    const overlap = Math.max(0, LOADING_GIF_SETTINGS.overlap);
+    const vPadding = LOADING_GIF_SETTINGS.vPadding;
+
+    // clamp overlap so it doesn't exceed size
+    const maxOverlap = Math.max(0, size - 8);
+    const usedOverlap = Math.min(overlap, maxOverlap);
+
+    // spacing between images when overlap applied becomes negative margin
+    const imgGap = usedOverlap > 0 ? 0 : gap;
+
+    // Build three image blocks with left-shift for overlap
+    const imgsHtml = [0,1,2].map(i => {
+      const shiftLeft = i === 0 ? 0 : (usedOverlap > 0 ? -usedOverlap * i : 0);
+      const marginLeft = shiftLeft ? `${shiftLeft}px` : (i === 0 ? '0' : `${imgGap}px`);
+      // For negative margin (overlap) we apply margin-left negative
+      const ml = shiftLeft ? `${shiftLeft}px` : marginLeft;
+      return `<div style="width: ${size}px; height: ${size}px; margin-left: ${ml};">
+                <img src="${aiGifUrl}" alt="AI думает..." style="width: 100%; height: 100%; object-fit: contain; display:block;">
+              </div>`;
+    }).join('');
+
+    section.style.paddingTop = vPadding + 'px';
+    section.style.paddingBottom = vPadding + 'px';
+
     section.innerHTML = `
       <div class="media-section-head">
         <div class="section-title size-sm btns">
           <div class="section-title__link">
             <span>AI готовит Ваши рекомендации</span>
-            <svg class="svg-inline--fa fa-arrow-right fa-sm" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="arrow-right" role="img"
-                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor"
-                d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"></path></svg>
           </div>
         </div>
       </div>
       <div class="ej_g ej_ek">
-        <div class="ej_az" id="plugin-scroll-content" style="display: flex; justify-content: center; align-items: center; min-height: 200px;">
-          <div style="text-align: center;">
-            <div class="spinner" style="width: 40px; height: 40px; margin: 0 auto 16px;">
-              <svg viewBox="0 0 50 50" style="animation: rotate 2s linear infinite;">
-                <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5" 
-                        style="stroke-linecap: round; animation: dash 1.5s ease-in-out infinite;"></circle>
-              </svg>
+        <div class="ej_az" id="plugin-scroll-content" style="display: flex; justify-content: center; align-items: center; min-height: ${Math.max(size,120)}px;">
+          <div style="text-align: center; display:flex; justify-content:center; align-items:center;">
+            <div style="display:flex; align-items:center;">
+              ${imgsHtml}
             </div>
-            <div style="color: var(--color-text-secondary);">Загрузка рекомендаций...</div>
           </div>
         </div>
       </div>
-      <style>
-        @keyframes rotate {
-          100% { transform: rotate(360deg); }
-        }
-        @keyframes dash {
-          0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
-          50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
-          100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
-        }
-      </style>
     `;
     return section;
   }
@@ -505,7 +526,7 @@
                     <div class="card-inline__heading">Тест</div>
                     <div class="card-inline__name">${rus_name}</div>
                     </div>
-                    <div class="card-inline__footer">Футер</div>
+                    <div class="card-inline__footer" style="margin-top:auto;">Футер</div>
                 </div>
                 <div class="card-inline__rating">
                     <div class="c9_ea c9_eb" data-media-id="${id}">
@@ -548,7 +569,7 @@
       <div class="media-section-head">
         <div class="section-title size-sm btns">
           <div class="section-title__link">
-            <span>Рекомендации от расширения</span>
+            <span>Рекомендации от AI (˶˃ ᵕ ˂˶)</span>
             <svg class="svg-inline--fa fa-arrow-right fa-sm" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="arrow-right" role="img"
                  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor"
                 d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"></path></svg>
@@ -670,7 +691,7 @@
       <div class="media-section-head">
         <div class="section-title size-sm btns">
           <div class="section-title__link">
-            <span>Рекомендации от расширения</span>
+            <span>Рекомендации от AI (˶˃ ᵕ ˂˶)</span>
             <svg class="svg-inline--fa fa-arrow-right fa-sm" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="arrow-right" role="img"
                  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor"
                 d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"></path></svg>
