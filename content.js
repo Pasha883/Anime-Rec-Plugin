@@ -523,10 +523,10 @@
                 </div>
                 <div class="card-inline__body _content-between">
                     <div>
-                    <div class="card-inline__heading">Тест</div>
+                    <div class="card-inline__heading">Оценка: ${rating.average}</div>
                     <div class="card-inline__name">${rus_name}</div>
                     </div>
-                    <div class="card-inline__footer" style="margin-top:auto;">Футер</div>
+                    <div class="card-inline__footer" style="margin-top:auto;">${type.label} · ${status.label}</div>
                 </div>
                 <div class="card-inline__rating">
                     <div class="c9_ea c9_eb" data-media-id="${id}">
