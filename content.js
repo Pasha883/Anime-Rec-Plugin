@@ -31,11 +31,12 @@
         return this.stop();
       }
       // ВСТАВЛЯЕМ БЛОК
-      if (insertOnce()) {
-        // "Пинаем" окно, НО теперь это не так важно, т.к. логика наша
-        window.dispatchEvent(new Event('resize')); 
-        this.stop();
-      }
+      insertOnce().then(ok => {
+            if (ok) {
+                window.dispatchEvent(new Event('resize'));
+                watcher.stop?.(); // если есть
+            }
+        });
     }
   }
   const watcher = new InsertWatcher();
@@ -60,6 +61,7 @@
   const findCharactersSectionBody = () => findSectionBodyByTitle("Персонажи");
   const firstSectionBody = () => document.querySelector(".section-body");
   const isAnimeDetailUrl = () => /\/anime\//.test(location.pathname);
+  
 
   // ========================= FEEDBACK (STUB) ===============================
   async function sendFeedbackToServer({ mediaId, action }) {
@@ -324,6 +326,49 @@
 
     
   // ========================= BUILD SECTION =================================
+  function buildLoadingSection() {
+    const section = document.createElement("div");
+    section.className = "section-body p2_p3";
+    section.id = "plugin-recs";
+    
+    section.innerHTML = `
+      <div class="media-section-head">
+        <div class="section-title size-sm btns">
+          <div class="section-title__link">
+            <span>AI готовит Ваши рекомендации</span>
+            <svg class="svg-inline--fa fa-arrow-right fa-sm" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="arrow-right" role="img"
+                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor"
+                d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"></path></svg>
+          </div>
+        </div>
+      </div>
+      <div class="ej_g ej_ek">
+        <div class="ej_az" id="plugin-scroll-content" style="display: flex; justify-content: center; align-items: center; min-height: 200px;">
+          <div style="text-align: center;">
+            <div class="spinner" style="width: 40px; height: 40px; margin: 0 auto 16px;">
+              <svg viewBox="0 0 50 50" style="animation: rotate 2s linear infinite;">
+                <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5" 
+                        style="stroke-linecap: round; animation: dash 1.5s ease-in-out infinite;"></circle>
+              </svg>
+            </div>
+            <div style="color: var(--color-text-secondary);">Загрузка рекомендаций...</div>
+          </div>
+        </div>
+      </div>
+      <style>
+        @keyframes rotate {
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes dash {
+          0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+          50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+          100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+        }
+      </style>
+    `;
+    return section;
+  }
+
   function makePlaceholderCards(n) {
     const items = [];
     for (let i = 0; i < n; i++) {
@@ -373,12 +418,39 @@
 
         const {ageRestriction, contentMarking, cover, eng_name, id, model, name, rating ,releaseDate, releaseDateString, rus_name, shiki_rate, site, slug, slug_url, status, type} = data[0];
         const {default_img, filename, md, thumbnail} = cover;
-        console.log(default_img);
+        console.log(default_img, filename, cover, md);
 
-
+        const card = (`
+                    <a href="javascript:void(0)" class="card-inline _elevated-2 _rounded-lg" data-media-info-tooltip="enabled" data-media-id="${id}">
+                <div class="cover _shadow card-inline__cover _size-default">
+                    <div class="cover__wrap">
+                    <img src="${md}" alt="${name}" class="cover__img" loading="lazy" onload="this.classList.add('_loaded')">
+                    </div>
+                </div>
+                <div class="card-inline__body _content-between">
+                    <div>
+                    <div class="card-inline__heading">Тест</div>
+                    <div class="card-inline__name">${name}</div>
+                    </div>
+                    <div class="card-inline__footer">Футер</div>
+                </div>
+                <div class="card-inline__rating">
+                    <div class="c9_ea c9_eb" data-media-id="${id}">
+                    <button class="c9_c2 c9_ef c9_bo c9_eh" data-act="up" title="Хорошая рекомендация" aria-label="Плюс">
+                        ${PLUS_SVG}
+                    </button>
+                    <div class="c9_ec c9_ef" data-tooltip="Вверх плюса, Вниз минуса" data-kind="score">Тест</div>
+                    <button class="c9_c2 c9_eg c9_bo c9_eh" data-act="down" title="Плохая рекомендация" aria-label="Минус">
+                        ${MINUS_SVG}
+                    </button>
+                    </div>
+                </div>
+                </a>
+            `);
+        return card;
     }
 
-  function buildRecsSection() {
+  function buildRecsSection(cards) {
     const section = document.createElement("div");
     section.className = "section-body p2_p3";
     section.id = "plugin-recs";
@@ -419,7 +491,7 @@
         <!-- Мы НЕ используем data-scroll-content. Вместо него наш ID -->
         <!-- Класс ej_az оставляем для стилей, но inline-стили из <style> выше его "победят" -->
         <div class="ej_az" id="plugin-scroll-content">
-          ${makePlaceholderCards(8)}
+          ${cards}
         </div>
       </div>
     `;
@@ -500,60 +572,181 @@
   }
 
   // ========================= INSERTION STRATEGY ============================
-  function insertOnce() {
-    if (document.getElementById("plugin-recs")) {
-      return true;
+  // guard flag to avoid concurrent insertion attempts (race condition)
+  let _plugin_inserting = false;
+
+  async function updateSection(section, cardsHtml) {
+    if (!section) return;
+    
+    // Replace content with actual recommendations
+    section.innerHTML = `
+      <style>
+        #plugin-scroll-content {
+          display: flex !important;
+          overflow-x: auto !important;
+          scroll-behavior: smooth;
+          gap: 16px;
+          padding: 0 4px;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        #plugin-scroll-content::-webkit-scrollbar {
+          display: none;
+        }
+      </style>
+      <div class="media-section-head">
+        <div class="section-title size-sm btns">
+          <div class="section-title__link">
+            <span>Рекомендации от расширения</span>
+            <svg class="svg-inline--fa fa-arrow-right fa-sm" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="arrow-right" role="img"
+                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor"
+                d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"></path></svg>
+          </div>
+        </div>
+      </div>
+      <div class="ej_g ej_ek">
+        <div class="ej_bk ej_bp ej_b6 ej_eo" style="display: none;" data-scroll-dir="left"><div class="ej_bo">${CHEVRON_LEFT_SVG}</div></div>
+        <div class="ej_bk ej_bq ej_b6 ej_eo" style="" data-scroll-dir="right"><div class="ej_bo">${CHEVRON_RIGHT_SVG}</div></div>
+        <div class="ej_az" id="plugin-scroll-content">
+          ${cardsHtml}
+        </div>
+      </div>
+    `;
+
+    // Restore scroll functionality
+    const scrollContent = section.querySelector('#plugin-scroll-content');
+    const leftArrow = section.querySelector('[data-scroll-dir="left"]');
+    const rightArrow = section.querySelector('[data-scroll-dir="right"]');
+
+    // Re-add scroll listeners and arrow functionality
+    if (scrollContent) {
+      const updateArrows = () => {
+        if (!scrollContent || !leftArrow || !rightArrow) return;
+        const scrollLeft = Math.ceil(scrollContent.scrollLeft);
+        const scrollWidth = scrollContent.scrollWidth;
+        const clientWidth = scrollContent.clientWidth;
+        const atStart = scrollLeft < 10;
+        const atEnd = (scrollWidth - scrollLeft - clientWidth) < 10;
+        leftArrow.style.display = atStart ? 'none' : 'block';
+        rightArrow.style.display = atEnd ? 'none' : 'block';
+      };
+
+      scrollContent.addEventListener('scroll', updateArrows, { passive: true });
+      setTimeout(updateArrows, 100);
+      setTimeout(updateArrows, 300);
+
+      // Re-add click handlers for navigation arrows and rating
+      section.addEventListener("click", async (e) => {
+        // Navigation arrows logic
+        const arrowBtn = e.target.closest('[data-scroll-dir]');
+        if (arrowBtn && scrollContent) {
+          const direction = arrowBtn.getAttribute('data-scroll-dir');
+          const scrollAmount = scrollContent.clientWidth * 0.8;
+          
+          scrollContent.scrollBy({
+            left: direction === 'left' ? -scrollAmount : scrollAmount,
+            behavior: 'smooth'
+          });
+          
+          setTimeout(updateArrows, 100);
+          return;
+        }
+
+        // Rating logic
+        const ratingBtn = e.target.closest("button.c9_c2");
+        if (!ratingBtn) return;
+
+        const wrap = ratingBtn.closest(".c9_ea.c9_eb");
+        if (!wrap) return;
+        const mediaId = Number(wrap.getAttribute("data-media-id"));
+        const act = ratingBtn.getAttribute("data-act");
+        const st = ratingState.get(mediaId);
+        if (!st) return;
+        if (act === "up") st.up += 1;
+        if (act === "down") st.down += 1;
+        const scoreEl = wrap.querySelector('[data-kind="score"]');
+        if (scoreEl) {
+          scoreEl.textContent = String(score(st));
+          scoreEl.setAttribute("data-tooltip", `${st.up} плюса, ${st.down} минуса`);
+        }
+        try { await sendFeedbackToServer({ mediaId, action: act }); } catch {}
+      });
     }
-    const isTargetPage = isAnimeDetailUrl();
-    if (!isTargetPage) {
+  }
+
+  async function insertOnce() {
+    // quick guard: if the section already exists or insertion in progress
+    if (document.getElementById("plugin-recs") || _plugin_inserting) {
       return false;
     }
-//###################РАБОТА С API, КАК МИНИМУМ - ТЕСТ############################
-    (async () => {
-        const el = document.querySelector('h2.qx_q0, h2[class^="qx_"]');
-        const romajiName = el?.textContent.trim();
-        if (!romajiName) return;
 
-        const result = await getEnglishTitle(romajiName);
-        const english = result.english ?? result.romaji ?? null;
-        console.log(english);
-        const data = await getSearchQueue(english);
-        await clearFavoriteRequest();
-        const recomendations = await parseRecomendations(data);
+    _plugin_inserting = true;
+    try {
+      const isTargetPage = isAnimeDetailUrl();
+      if (!isTargetPage) {
+        return false;
+      }
 
-        const cards = [];
+      // Insert loading placeholder first
+      const loadingSection = buildLoadingSection();
+      let anchorAfter = findSectionBodyByTitle("Похожее")
+        || findSectionBodyByTitle("Связанное")
+        || findTagsSectionBody();
+      let afterNode = anchorAfter || findScheduleContainer();
 
-        for(let i = 0; i < recomendations.length - 10; i++){
-           const anime = await makeAnimeLibSearch(english);
-            buildAnimeCard(anime);
+      if (afterNode) {
+        afterNode.insertAdjacentElement("afterend", loadingSection);
+      } else {
+        const charsSB = findCharactersSectionBody();
+        if (charsSB && charsSB.parentElement) {
+          charsSB.parentElement.insertBefore(loadingSection, charsSB);
+        } else {
+          const firstSB = firstSectionBody();
+          if (firstSB) {
+            firstSB.insertAdjacentElement("afterend", loadingSection);
+          } else {
+            return false;
+          }
         }
-    })().catch(console.warn);
+      }
 
-    let anchorAfter = findSectionBodyByTitle("Похожее")
-                   || findSectionBodyByTitle("Связанное")
-                   || findTagsSectionBody();
+      // Now fetch recommendations in background
+      const el = document.querySelector('h2.qx_q0, h2[class^="qx_"]');
+      const romajiName = el?.textContent.trim();
+      if (!romajiName) return false;
 
-    let afterNode = anchorAfter || findScheduleContainer();
+      const result = await getEnglishTitle(romajiName);
+      const english = result.english ?? result.romaji ?? null;
+      console.log(english);
+      const data = await getSearchQueue(english);
+      await clearFavoriteRequest();
+      const recomendations = await parseRecomendations(data);
 
-    const section = buildRecsSection();
+      const cards = [];
 
-    if (afterNode) {
-      afterNode.insertAdjacentElement("afterend", section);
-      return true;
+      // build cards, skip failed ones
+      for (let i = 0; i < Math.max(0, recomendations.length); i++) {
+        const anime = await makeAnimeLibSearch(recomendations[i]);
+        const card = buildAnimeCard(anime);
+        if (card && card !== -1) cards.push(card);
+      }
+
+      const cardsHtml = cards.join("");
+
+      // Update the loading section with actual recommendations
+      const section = document.getElementById("plugin-recs");
+      if (section) {
+        await updateSection(section, cardsHtml);
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      console.warn('insertOnce error', err);
+      return false;
+    } finally {
+      _plugin_inserting = false;
     }
-
-    const charsSB = findCharactersSectionBody();
-    if (charsSB && charsSB.parentElement) {
-      charsSB.parentElement.insertBefore(section, charsSB);
-      return true;
-    }
-
-    const firstSB = firstSectionBody();
-    if (firstSB) {
-      firstSB.insertAdjacentElement("afterend", section);
-      return true;
-    }
-    return false;
   }
 
   // ========================= BOOT (NEW RELIABLE LOGIC) =====================
