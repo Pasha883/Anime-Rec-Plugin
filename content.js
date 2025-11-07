@@ -217,12 +217,17 @@
 
         const length = recommendations.length;
 
+        const names = [];
+
         console.log("Message:", message);
 
         for (let i = 0; i < length; i++){
             const {id, name, genres, score, image_url, mal_url} = recommendations[i];
             console.log(name);
+            names.push(name);
         }
+
+        return names;
     }
 
     // 2) Рекомендации — тоже async
@@ -308,6 +313,8 @@
 
         const data = resp.json ?? resp.text;
         console.log("Search data:", data);
+
+        return data;
     }
 
 
@@ -352,6 +359,24 @@
     }
     return items.join("");
   }
+
+    function buildAnimeCard(animeLibJSON){
+        const {data, links, meta} = animeLibJSON;        
+        console.log("Build anime card");
+        //console.log(ageRestriction, contentMarking, cover, eng_name, id, model, name, rating, releaseDate, releaseDateString, rus_name, shiki_rate, site, slug, slug_url, status, type);
+        
+
+        if (data.length < 1){
+            console.log("Аниме не найдено на AnimeLib");
+            return -1;
+        }
+
+        const {ageRestriction, contentMarking, cover, eng_name, id, model, name, rating ,releaseDate, releaseDateString, rus_name, shiki_rate, site, slug, slug_url, status, type} = data[0];
+        const {default_img, filename, md, thumbnail} = cover;
+        console.log(default_img);
+
+
+    }
 
   function buildRecsSection() {
     const section = document.createElement("div");
@@ -483,7 +508,7 @@
     if (!isTargetPage) {
       return false;
     }
-    //РАБОТА С API, КАК МИНИМУМ - ТЕСТ
+//###################РАБОТА С API, КАК МИНИМУМ - ТЕСТ############################
     (async () => {
         const el = document.querySelector('h2.qx_q0, h2[class^="qx_"]');
         const romajiName = el?.textContent.trim();
@@ -494,9 +519,14 @@
         console.log(english);
         const data = await getSearchQueue(english);
         await clearFavoriteRequest();
-        await parseRecomendations(data);
+        const recomendations = await parseRecomendations(data);
 
-        await makeAnimeLibSearch(english);
+        const cards = [];
+
+        for(let i = 0; i < recomendations.length - 10; i++){
+           const anime = await makeAnimeLibSearch(english);
+            buildAnimeCard(anime);
+        }
     })().catch(console.warn);
 
     let anchorAfter = findSectionBodyByTitle("Похожее")
