@@ -295,6 +295,21 @@
         return true;
     }
 
+    async function makeAnimeLibSearch(romajiName){
+        const url = "https://api.cdnlibs.org/api/anime?fields[]=rate_avg&fields[]=rate&fields[]=releaseDate&q=" + encodeURIComponent(romajiName);
+        
+        console.log("AnimeLib search request");
+
+        const resp = await fetchViaBg({ url });
+        if (!resp?.ok) {
+            console.warn("search failed:", resp?.error || resp);
+            return;
+        }
+
+        const data = resp.json ?? resp.text;
+        console.log("Search data:", data);
+    }
+
 
     
 
@@ -480,6 +495,8 @@
         const data = await getSearchQueue(english);
         await clearFavoriteRequest();
         await parseRecomendations(data);
+
+        await makeAnimeLibSearch(english);
     })().catch(console.warn);
 
     let anchorAfter = findSectionBodyByTitle("Похожее")
