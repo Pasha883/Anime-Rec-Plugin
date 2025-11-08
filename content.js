@@ -530,17 +530,7 @@
                     </div>
                     <div class="card-inline__footer" style="margin-top:auto;">${type.label} · ${status.label}</div>
                 </div>
-                <div class="card-inline__rating">
-                    <div class="c9_ea c9_eb" data-media-id="${id}">
-                    <button class="c9_c2 c9_ef c9_bo c9_eh" data-act="up" title="Хорошая рекомендация" aria-label="Плюс">
-                        ${PLUS_SVG}
-                    </button>
-                    <div class="c9_ec c9_ef" data-tooltip="Вверх плюса, Вниз минуса" data-kind="score">Тест</div>
-                    <button class="c9_c2 c9_eg c9_bo c9_eh" data-act="down" title="Плохая рекомендация" aria-label="Минус">
-                        ${MINUS_SVG}
-                    </button>
-                    </div>
-                </div>
+                
                 </a>
             `);
         return card;
@@ -636,23 +626,27 @@
       }
 
       // 2. ЛОГИКА ДЛЯ РЕЙТИНГА (старая)
-      const ratingBtn = e.target.closest("button.c9_c2");
-      if (!ratingBtn) return;
+    //   const ratingBtn = e.target.closest("button.c9_c2");
+    //   if (!ratingBtn) return;
 
-      const wrap = ratingBtn.closest(".c9_ea.c9_eb");
-      if (!wrap) return;
-      const mediaId = Number(wrap.getAttribute("data-media-id"));
-      const act = ratingBtn.getAttribute("data-act");
-      const st = ratingState.get(mediaId);
-      if (!st) return;
-      if (act === "up") st.up += 1;
-      if (act === "down") st.down += 1;
-      const scoreEl = wrap.querySelector('[data-kind="score"]');
-      if (scoreEl) {
-        scoreEl.textContent = String(score(st));
-        scoreEl.setAttribute("data-tooltip", `${st.up} плюса, ${st.down} минуса`);
-      }
-      try { await sendFeedbackToServer({ mediaId, action: act }); } catch {}
+    //   // Prevent the rating button click from bubbling to card/site navigation
+    //   e.stopPropagation();
+    //   e.preventDefault?.();
+
+    //   const wrap = ratingBtn.closest(".c9_ea.c9_eb");
+    //   if (!wrap) return;
+    //   const mediaId = Number(wrap.getAttribute("data-media-id"));
+    //   const act = ratingBtn.getAttribute("data-act");
+    //   const st = ratingState.get(mediaId);
+    //   if (!st) return;
+    //   if (act === "up") st.up += 1;
+    //   if (act === "down") st.down += 1;
+    //   const scoreEl = wrap.querySelector('[data-kind="score"]');
+    //   if (scoreEl) {
+    //     scoreEl.textContent = String(score(st));
+    //     scoreEl.setAttribute("data-tooltip", `${st.up} плюса, ${st.down} минуса`);
+    //   }
+    //   try { await sendFeedbackToServer({ mediaId, action: act }); } catch {}
     });
 
     // Обновляем стрелки при первой загрузке
@@ -746,7 +740,11 @@
         const ratingBtn = e.target.closest("button.c9_c2");
         if (!ratingBtn) return;
 
-        const wrap = ratingBtn.closest(".c9_ea.c9_eb");
+  // Prevent the rating button click from bubbling to card/site navigation
+  e.stopPropagation();
+  e.preventDefault?.();
+
+  const wrap = ratingBtn.closest(".c9_ea.c9_eb");
         if (!wrap) return;
         const mediaId = Number(wrap.getAttribute("data-media-id"));
         const act = ratingBtn.getAttribute("data-act");
