@@ -514,8 +514,10 @@
         const {default_img, filename, md, thumbnail} = cover;
         console.log(default_img, filename, cover, md);
 
+        const url = `/ru/anime/` + slug_url;
+
         const card = (`
-                    <a href="javascript:void(0)" class="card-inline _elevated-2 _rounded-lg" data-media-info-tooltip="enabled" data-media-id="${id}">
+                    <a href="${url}" class="card-inline _elevated-2 _rounded-lg" data-media-info-tooltip="enabled" data-media-id="${id}">
                 <div class="cover _shadow card-inline__cover _size-default">
                     <div class="cover__wrap">
                     <img src="${md}" alt="${rus_name}" class="cover__img" loading="lazy" onload="this.classList.add('_loaded')">
@@ -570,9 +572,6 @@
         <div class="section-title size-sm btns">
           <div class="section-title__link">
             <span>Рекомендации от AI (˶˃ ᵕ ˂˶)</span>
-            <svg class="svg-inline--fa fa-arrow-right fa-sm" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="arrow-right" role="img"
-                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor"
-                d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"></path></svg>
           </div>
         </div>
       </div>
@@ -692,9 +691,6 @@
         <div class="section-title size-sm btns">
           <div class="section-title__link">
             <span>Рекомендации от AI (˶˃ ᵕ ˂˶)</span>
-            <svg class="svg-inline--fa fa-arrow-right fa-sm" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="arrow-right" role="img"
-                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor"
-                d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"></path></svg>
           </div>
         </div>
       </div>
