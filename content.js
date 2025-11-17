@@ -1,5 +1,4 @@
 (() => {
-  // ========================= ROUTER & WATCHER ==============================
   class InsertWatcher {
     constructor() {
       this.mo = null;
@@ -30,10 +29,8 @@
       if (document.getElementById("plugin-recs")) {
         return this.stop();
       }
-      // ВСТАВЛЯЕМ БЛОК
       insertOnce().then(ok => {
             if (ok) {
-                // "Пинаем" сайт, чтобы он пересчитал размеры
                 window.dispatchEvent(new Event('resize'));
                 watcher.stop?.(); 
             }
@@ -42,7 +39,6 @@
   }
   const watcher = new InsertWatcher();
 
-  // ========================= SELECTORS & HELPERS ===========================
   const findSectionBodyByTitle = (title) => {
     for (const sb of document.querySelectorAll(".section-body")) {
       const span = sb.querySelector(".section-title__link > span");
@@ -67,7 +63,6 @@
     return !section || section === 'info';
   };
   
-  // ========================= INLINE SVG FROM SITE ==========================
   const CHEVRON_LEFT_SVG = `
     <svg class="svg-inline--fa fa-chevron-left" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="chevron-left" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512">
       <path class="" fill="currentColor" d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"></path>
@@ -76,85 +71,14 @@
     <svg class="svg-inline--fa fa-chevron-right" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="chevron-right" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512">
       <path class="" fill="currentColor" d="M310.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L242.7 256 73.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"></path>
     </svg>`;
-  
-  // ========================= API FUNCTIONS =================================
-  // (Весь твой API-код остается без изменений)
-  
-  async function getEnglishTitle(romajiName) {
-    const anilistQuery = `
-        query ($search: String!) {
-        Media(search: $search, type: ANIME) {
-            id
-            title { romaji english native userPreferred }
-            synonyms
-        }
-        }`;
-    try {
-        const alResp = await fetch("https://graphql.anilist.co", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify({ query: anilistQuery, variables: { search: romajiName } })
-        });
-        if (alResp.ok) {
-        const alJson = await alResp.json();
-        const m = alJson.data?.Media;
-        if (m) {
-            return {
-            source: "AniList",
-            id: m.id,
-            romaji: m.title.romaji || null,
-            english: m.title.english || m.title.romaji || null,
-            native: m.title.native || null,
-            synonyms: m.synonyms || []
-            };
-        }
-        }
-    } catch (err) { console.warn("AniList request failed:", err); }
-    try {
-        const jkResp = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(romajiName)}&limit=1`);
-        if (jkResp.ok) {
-        const jkJson = await jkResp.json();
-        const d = jkJson.data?.[0];
-        if (d) {
-            const eng =
-            d.title_english ||
-            d.titles?.find(t => t.type === "English")?.title ||
-            d.title;
-            return {
-            source: "Jikan",
-            id: d.mal_id,
-            romaji: d.title,
-            english: eng,
-            native: d.title_japanese || null,
-            synonyms: d.titles?.map(t => t.title) || []
-            };
-        }
-        }
-    } catch (err) { console.warn("Jikan request failed:", err); }    
-  }
+       
   
   function fetchViaBg({ url, method = "GET", headers = {}, body = null }) {
       return new Promise((resolve) => {
           chrome.runtime.sendMessage({ type: "FETCH_JSON", url, method, headers, body }, (resp) => resolve(resp));
       });
   }
-  
-  async function addFavoritesRequest(data) {
-      if (!Array.isArray(data) || !Array.isArray(data[0])) return false;
-      const payload = { anime_id: data[0][0], anime_name: data[0][1] };
-      const url = "https://www.animerecbert.online/api/add_favorite";
-      try {
-          const resp = await fetchViaBg({
-              url: url,
-              method: "POST",
-              headers: { "Content-Type": "application/json", "Accept": "application/json" },
-              body: JSON.stringify(payload),
-          });
-          if (!resp?.ok) { console.warn("addFavoritesRequest failed:", resp); return false; }
-          console.log("addFavoritesRequest OK:", resp.json ?? resp.text);
-          return true;
-      } catch (e) { console.warn("addFavoritesRequest error:", e); return false; }
-  }
+
   
   function showError(message = "Не удалось составить рекомендации"){
       const section = document.getElementById("plugin-recs");
@@ -173,62 +97,33 @@
           </div>
         </div>`;
   }
-  
-  async function parseRecomendations(data){
-      const {message, recommendations} = data;
-      const length = recommendations.length;
-      const names = [];
-      console.log("Message:", message);
-      for (let i = 0; i < length; i++){
-          const {id, name, genres, score, image_url, mal_url} = recommendations[i];
-          console.log(name);
-          names.push(name);
-      }
-      return names;
-  }
-  
-  async function getRecomendations() {
-      console.log("Getting recommendations...");
-      const payload = {
-          filters: { show_sequels: false, show_movies: true, show_tv: true, show_ova: false },
-          blacklisted_animes: [],
-      };
-      const resp = await fetchViaBg({
-          url: "https://www.animerecbert.online/api/get_recommendations",
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Accept": "application/json" },
-          body: JSON.stringify(payload),
-      });
-      if (!resp?.ok) { console.warn("getRecomendations failed:", resp); return null; }
-      const data = resp.json ?? resp.text;
-      console.log("Recommendations:", data);
-      return data;
-  }
-  
-  async function getSearchQueue(animeName) {
-      const url = "https://www.animerecbert.online/api/search_animes?q=" + encodeURIComponent(animeName);
-      const resp = await fetchViaBg({ url });
-      if (!resp?.ok) { console.warn("search failed:", resp?.error || resp); return null; }
-      const data = resp.json ?? resp.text;
-      console.log("Search data:", data);
-      const added = await addFavoritesRequest(data);
-      if (added) {
-          const data = await getRecomendations();
-          return data;
-      } else {
-          console.warn("Skip recommendations: addFavoritesRequest failed (probably not found in DB)");
-          showError("AI не смогла составить рекомендаций по данному аниме. Она ещё учится, простите :(");
-          return null;
-      }
-  }
-  
-  async function clearFavoriteRequest(){
-      const url = "https://www.animerecbert.online/api/clear_favorites";
-      const resp = await fetchViaBg({ url: url, method: "POST" });
-      if (!resp?.ok){ console.warn("clearFavoriteRequest failed:", resp?.error || resp); return false; }
-      console.log("clearFavoriteRequest success");
-      return true;
-  }
+
+  const API_URL = "http://158.160.175.208:8000/api/get_recs_by_single_title";
+
+  async function getRecsBySingleAnime(animeLibId, top_k = 10) {
+    console.log("[DEBUG] API_URL =", API_URL);
+
+    const payload = {
+      animeLibId: Number(animeLibId),
+      top_k: top_k
+    };
+
+    const resp = await fetchViaBg({
+      url: API_URL,
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!resp?.ok) {
+      console.warn("getRecsBySingleAnime failed:", resp);
+      return null;
+    }
+
+    const data = resp.json ?? resp.text;
+    console.log("getRecsBySingleAnime Recommendations:", data);
+    return data.recs || null;
+}
   
   async function makeAnimeLibSearch(romajiName){
       const url = "https://api.cdnlibs.org/api/anime?fields[]=rate_avg&fields[]=rate&fields[]=releaseDate&q=" + encodeURIComponent(romajiName);
@@ -247,9 +142,7 @@
       return {data, links, meta};
   }
 
-  // ========================= BUILD SECTION =================================
   
-  // (buildLoadingSection остается без изменений)
   const LOADING_GIF_SETTINGS = { size: 100, gap: 12, overlap: 0, vPadding: 6 };
   function buildLoadingSection() {
     const section = document.createElement("div");
@@ -294,8 +187,6 @@
     return section;
   }
   
-  // *** ИСПРАВЛЕНИЕ #1: ВЁРСТКА КАРТОЧКИ (для обрезки текста) ***
-  // (Этот код мы уже исправили, он правильный)
   function buildAnimeCard(animeLibJSON){
       const {data, links, meta} = animeLibJSON;        
       
@@ -325,15 +216,7 @@
       return card;
   }
 
-  // ========================= INSERTION STRATEGY ============================
   let _plugin_inserting = false;
-
-  // *** ИСПРАВЛЕНИЕ #2: ВЁРСТКА СЕКЦИИ И ЛОГИКА СТРЕЛОК ***
-  //
-  // Эта функция теперь ВНЕДРЯЕТ <style> ДЛЯ ИСПРАВЛЕНИЯ CSS
-  // и содержит СОБСТВЕННЫЙ JS для управления стрелками.
-  //
-  // Полная замена функции updateSection
 async function updateSection(section, cardsHtml) {
   if (!section) return;
 
@@ -364,7 +247,6 @@ async function updateSection(section, cardsHtml) {
     </div>
   `;
 
-  // Локальная логика показа/скрытия стрелок (подстраховка, если сайтный код не сработает)
   const scrollContent = section.querySelector('#plugin-scroll-content');
   const leftArrow = section.querySelector('[data-scroll-dir="left"]');
   const rightArrow = section.querySelector('[data-scroll-dir="right"]');
@@ -378,7 +260,6 @@ async function updateSection(section, cardsHtml) {
     rightArrow.style.display = (maxL - L <= 4)? 'none'  : '';
   };
 
-  // клики по стрелкам
   section.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-scroll-dir]');
     if (!btn) return;
@@ -387,11 +268,9 @@ async function updateSection(section, cardsHtml) {
     setTimeout(updateArrows, 150);
   });
 
-  // следим за скроллом/ресайзом
   scrollContent.addEventListener('scroll', updateArrows, { passive: true });
   window.addEventListener('resize', updateArrows, { passive: true });
 
-  // первичный расчёт
   setTimeout(updateArrows, 150);
   setTimeout(updateArrows, 300);
 }
@@ -407,7 +286,6 @@ async function updateSection(section, cardsHtml) {
         return false;
       }
       
-      // 1. Вставляем заглушку
       const loadingSection = buildLoadingSection();
       let anchorAfter = findSectionBodyByTitle("Похожее")
         || findSectionBodyByTitle("Связанное")
@@ -430,40 +308,39 @@ async function updateSection(section, cardsHtml) {
         }
       }
 
-      // 2. Получаем рекомендации
-      const el = document.querySelector('h2.sa_se, h2[class^="sa_"]');
-      const romajiName = el?.textContent.trim();
-      if (!romajiName) {
-        showError("Не удалось определить название для поиска рекомендаций");
-        return true;
+      const url = window.location.href;
+      const match = url.match(/\/anime\/(\d+)(?:--|\/)/);
+      let id = null;
+      if (match) {
+        id = match[1];
+        console.log(id); // "21371"
       }
 
-      const result = await getEnglishTitle(romajiName);
-      const english = result?.english ?? result?.romaji ?? null;
-      console.log(english);
-      const data = await getSearchQueue(english);
-      if (!data) {
-        // showError() уже вызвана внутри getSearchQueue
-        return true;
-      }
-
-      await clearFavoriteRequest();
-      const recomendations = await parseRecomendations(data);
+      const recomendations = await getRecsBySingleAnime(id, 20);
       if (!recomendations || recomendations.length === 0) {
         showError("AI не смогла составить рекомендаций по данному аниме. Она ещё учится, простите :(");
         return true;
       }
 
-      // 3. Собираем карточки
       const cards = [];
-      for (let i = 0; i < Math.max(0, recomendations.length); i++) {
+
+      let successCount = 0;
+      let i = 0;
+
+      while (i < Math.max(0, recomendations.length) && successCount < 10) {
         const anime = await makeAnimeLibSearch(recomendations[i]);
-        if (!anime) continue; 
-        
-        // Используем ИСПРАВЛЕННУЮ `buildAnimeCard`
-        const card = buildAnimeCard(anime); 
-        if (card && card !== -1) cards.push(card);
+        if (anime) {
+          const card = buildAnimeCard(anime);
+          if (card && card !== -1) {
+            cards.push(card);
+            successCount++;
+          }
+        }
+        i++;
       }
+
+      console.log(`Loaded ${successCount} cards from ${i} attempts`);
+
 
       if (cards.length === 0) {
         showError("По найденным результатам не удалось собрать карточки рекомендаций");
@@ -472,7 +349,6 @@ async function updateSection(section, cardsHtml) {
 
       const cardsHtml = cards.join("");
 
-      // 4. Обновляем секцию, используя ИСПРАВЛЕННУЮ `updateSection`
       const section = document.getElementById("plugin-recs");
       if (section) {
         await updateSection(section, cardsHtml);
@@ -489,8 +365,6 @@ async function updateSection(section, cardsHtml) {
     }
   }
 
-  // ========================= BOOT (NEW RELIABLE LOGIC) =====================
-  // (Этот код запуска остается без изменений)
   
   let currentUrl = location.href;
 
