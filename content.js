@@ -221,7 +221,7 @@ async function updateSection(section, cardsHtml) {
   if (!section) return;
 
   // тот же класс-обёртка, что и у «Похожее»
-  section.className = "section-body p7_p8";
+  section.className = "section-body pm_pn";
 
   section.innerHTML = `
     <div class="media-section-head">
@@ -233,7 +233,7 @@ async function updateSection(section, cardsHtml) {
     </div>
 
     <!-- ВАЖНО: используем именно cs_* + data-атрибуты, как на сайте -->
-    <div class="cs_i cs_ct" data-scroll-container="">
+    <div class="cs_j cs_ct" data-scroll-container="">
       <div class="cs_cu cs_cx cs_b7 cs_cz" style="display:none" data-scroll-dir="left">
         <div class="cs_cq">${CHEVRON_LEFT_SVG}</div>
       </div>
@@ -241,7 +241,7 @@ async function updateSection(section, cardsHtml) {
         <div class="cs_cq">${CHEVRON_RIGHT_SVG}</div>
       </div>
 
-      <div data-scroll-content="" class="cs_ag" id="plugin-scroll-content">
+      <div data-scroll-content="" class="cs_am" id="plugin-scroll-content">
         ${cardsHtml}
       </div>
     </div>
