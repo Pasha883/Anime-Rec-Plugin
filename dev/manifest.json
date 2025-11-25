@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "ИИ рекомендации аниме для сайта AnimeLib",
+  "version": "0.8.2-dev",
+  "description": "Встраивает на сайт AnimeLib Ai - вашего личного рекомендатора аниме!",
+  "permissions": [],
+  "web_accessible_resources": [{
+    "resources": ["ai.gif"],
+    "matches": [
+      "*://*.anilib.me/*",
+      "*://anilib.me/*",
+      "*://*.animelib.me/*",
+      "*://animelib.me/*",
+      "*://*.animelib.org/*",
+      "*://animelib.org/*",
+      "*://v3.animelib.org/*"
+    ]
+  }],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.anilib.me/*",
+        "*://anilib.me/*",
+        "*://*.animelib.me/*",
+        "*://animelib.me/*",
+        "*://*.animelib.org/*",
+        "*://animelib.org/*",
+        "*://v3.animelib.org/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ]
+}
