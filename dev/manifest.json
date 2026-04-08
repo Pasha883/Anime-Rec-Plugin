@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "ИИ рекомендации аниме для сайта AnimeLib",
-  "version": "0.8.4",
-  "version_name" : "0.8.4-dev",
+  "version": "0.8.5",
+  "version_name" : "0.8.5-dev",
   "description": "Встраивает на сайт AnimeLib Ai - вашего личного рекомендатора аниме!",
   "permissions": [],
   "web_accessible_resources": [{

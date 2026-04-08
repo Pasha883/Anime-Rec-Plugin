@@ -126,7 +126,7 @@
 }
   
   async function makeAnimeLibSearch(romajiName){
-      const url = "https://api.cdnlibs.org/api/anime?fields[]=rate_avg&fields[]=rate&fields[]=releaseDate&q=" + encodeURIComponent(romajiName);
+      const url = "https://hapi.hentaicdn.org/api/anime?fields[]=rate_avg&fields[]=rate&fields[]=releaseDate&q=" + encodeURIComponent(romajiName);
       console.log("AnimeLib search request");
       const resp = await fetchViaBg({ url });
       if (!resp?.ok) { console.warn("search failed:", resp?.error || resp); return; }
@@ -221,7 +221,7 @@ async function updateSection(section, cardsHtml) {
   if (!section) return;
 
   // тот же класс-обёртка, что и у «Похожее»
-  section.className = "section-body p9_qa";
+  section.className = "section-body s2_s3";
 
   section.innerHTML = `
     <div class="media-section-head">
@@ -232,16 +232,15 @@ async function updateSection(section, cardsHtml) {
       </div>
     </div>
 
-    <!-- ВАЖНО: используем именно cs_* + data-атрибуты, как на сайте -->
-    <div class="ev_o ev_ew" data-scroll-container="">
-      <div class="ev_bi ev_bn ev_ec ev_e0" style="display:none" data-scroll-dir="left">
-        <div class="ev_bm">${CHEVRON_LEFT_SVG}</div>
+    <div class="ew_k ew_ex" data-scroll-container="">
+      <div class="ew_a5 ew_ba ew_ee ew_e1" style="display:none" data-scroll-dir="left">
+        <div class="ew_a9">${CHEVRON_LEFT_SVG}</div>
       </div>
-      <div class="ev_bi ev_bo ev_ec ev_e0" style="" data-scroll-dir="right">
-        <div class="ev_bm">${CHEVRON_RIGHT_SVG}</div>
+      <div class="ew_a5 ew_bb ew_ee ew_e1" style="" data-scroll-dir="right">
+        <div class="ew_a9">${CHEVRON_RIGHT_SVG}</div>
       </div>
 
-      <div data-scroll-content="" class="ev_ao" id="plugin-scroll-content">
+      <div data-scroll-content="" class="ew_ab" id="plugin-scroll-content">
         ${cardsHtml}
       </div>
     </div>
