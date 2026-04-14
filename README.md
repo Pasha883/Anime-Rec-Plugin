@@ -81,6 +81,10 @@ Anime-Rec-Plugin/
 - Метод: POST
 - Payload: `{ "animeLibId": number, "top_k": number }`
 
+### Серверная часть
+
+Более подробное описание работы серверной части проекта, инференса моделей и всего пайплайна можно найти в репозитории серверной части: [Anime-Rec-Server](https://github.com/Pasha883/Anime-Rec-Server).
+
 ## Требования
 
 - Современный браузер с поддержкой Manifest V3
